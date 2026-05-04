@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WazapSender — Violetta</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:white;border-radius:20px;box-shadow:0 4px 40px rgba(0,0,0,.1);width:100%;max-width:520px;overflow:hidden}
+.header{background:linear-gradient(135deg,#6b21a8,#a855f7);padding:28px 32px;color:white}
+.header h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.header p{font-size:13px;opacity:.8}
+.status-bar{display:flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.15);border-radius:8px;padding:9px 14px;font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.dot.desconectado{background:rgba(255,255,255,.4)}
+.dot.conectando,.dot.qr{background:#fbbf24;animation:pulse 1s infinite}
+.dot.listo{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.3)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.body{padding:28px 32px}
+.section{margin-bottom:24px}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:11px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-purple{background:linear-gradient(135deg,#6b21a8,#a855f7);color:white}
+.btn-purple:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(168,85,247,.4)}
+.btn-purple:disabled{background:#d1d5db;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-red{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
+.btn-red:hover{background:#fecaca}
+.btn-green{background:linear-gradient(135deg,#059669,#34d399);color:white}
+.btn-green:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(52,211,153,.4)}
+.btn-green:disabled{background:#d1d5db;cursor:not-allowed;transform:none;box-shadow:none}
+.qr-section{text-align:center;padding:16px 0;display:none}
+.qr-section.show{display:block}
+.qr-wrap{display:inline-block;padding:12px;border:2px solid #e5e7eb;border-radius:14px;margin-bottom:12px}
+#qr-img{width:180px;height:180px;border-radius:6px}
+.qr-steps{background:#f9fafb;border-radius:10px;padding:14px;font-size:12px;color:#6b7280;line-height:2;text-align:left;margin-top:10px}
+.qr-steps b{color:#374151}
+.form-section{display:none}
+.form-section.show{display:block}
+.connected-banner{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:13px;color:#065f46;display:flex;align-items:center;justify-content:space-between}
+.btn-sm{background:none;border:none;font-size:11px;color:#9ca3af;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:'DM Sans',sans-serif}
+.btn-sm:hover{background:#d1fae5;color:#374151}
+label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+input,textarea,select{width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:#111;outline:none;transition:border-color .2s;background:#fafafa;margin-bottom:14px}
+input:focus,textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,.1);background:white}
+textarea{resize:vertical;min-height:90px}
+.hint{font-size:11px;color:#9ca3af;margin-top:-10px;margin-bottom:14px}
+.dropzone{border:2px dashed #e5e7eb;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:#9ca3af;font-size:13px;margin-bottom:14px}
+.dropzone:hover,.dropzone.drag{border-color:#a855f7;color:#6b21a8;background:#faf5ff}
+.dropzone-icon{font-size:28px;margin-bottom:6px}
+#resultado{margin-top:16px;padding:14px;border-radius:10px;font-size:13px;display:none}
+#resultado.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;display:block}
+#resultado.error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.stat{background:#f9fafb;border-radius:10px;padding:12px;text-align:center}
+.stat-val{font-size:24px;font-weight:800;letter-spacing:-1px}
+.stat-val.green{color:#059669}
+.stat-val.red{color:#dc2626}
+.stat-val.gray{color:#6b7280}
+.stat-lbl{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.log-box{background:#0f172a;border-radius:10px;padding:14px;margin-top:14px;max-height:180px;overflow-y:auto;display:none}
+.log-box.show{display:block}
+.log-line{font-size:11px;font-family:'Courier New',monospace;color:#94a3b8;padding:2px 0;border-bottom:1px solid #1e293b}
+.log-line:last-child{border:none}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#6b21a8;color:white;border-radius:50%;font-size:11px;font-weight:700;margin-right:8px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>💜 WazapSender</h1>
+    <p>Enviá mensajes personalizados desde tu WhatsApp</p>
+    <div class="status-bar">
+      <div class="dot desconectado" id="dot"></div>
+      <span id="status-text">Desconectado</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- PASO 1: Conectar -->
+    <div class="section" id="paso-conectar">
+      <div class="section-title"><span class="step-badge">1</span>Conectá tu WhatsApp</div>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px;line-height:1.6">
+        Escaneá el QR con tu WhatsApp para conectarte, igual que WhatsApp Web.
+      </p>
+      <button class="btn btn-purple" onclick="conectar()" id="btn-conectar">
+        📱 Conectar WhatsApp
+      </button>
+    </div>
+
+    <!-- QR -->
+    <div class="qr-section" id="qr-section">
+      <div class="qr-wrap">
+        <img id="qr-img" src="" alt="QR">
+      </div>
+      <p style="font-size:12px;color:#6b7280">Escaneá este código con tu celular</p>
+      <div class="qr-steps">
+        <div>1️⃣ &nbsp; Abrí <b>WhatsApp</b> en tu celular</div>
+        <div>2️⃣ &nbsp; Tocá los <b>3 puntos</b> → <b>Dispositivos vinculados</b></div>
+        <div>3️⃣ &nbsp; Tocá <b>Vincular dispositivo</b></div>
+        <div>4️⃣ &nbsp; Apuntá la cámara al QR de arriba</div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Formulario -->
+    <div class="form-section" id="form-section">
+
+      <div class="connected-banner">
+        <span>✅ WhatsApp conectado</span>
+        <button class="btn-sm" onclick="desconectar()">Desconectar</button>
+      </div>
+
+      <!-- Paso 2: Excel -->
+      <div class="section">
+        <div class="section-title"><span class="step-badge">2</span>Subí tu lista de contactos</div>
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+          <div class="dropzone-icon">📊</div>
+          <div id="drop-text">Arrastrá tu Excel acá o hacé click</div>
+          <div style="margin-top:4px;font-size:11px">Columnas: Nombre · Teléfono</div>
+        </div>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none">
+      </div>
+
+      <!-- Paso 3: Mensaje -->
+      <div class="section">
+        <div class="section-title"><span class="step-badge">3</span>Mensaje (opcional)</div>
+        <textarea id="inp-mensaje" placeholder="Dejalo vacío para usar un mensaje automático de Violetta 💜&#10;&#10;Podés usar {nombre} para personalizar."></textarea>
+        <div class="hint">Si lo dejás vacío se elige un mensaje al azar de la colección de Violetta</div>
+      </div>
+
+      <!-- Enviar -->
+      <button class="btn btn-green" onclick="enviar()" id="btn-enviar" disabled>
+        🚀 Enviar mensajes
+      </button>
+
+      <!-- Resultado -->
+      <div id="resultado"></div>
+
+      <!-- Stats -->
+      <div class="stats" id="stats" style="display:none">
+        <div class="stat">
+          <div class="stat-val green" id="stat-enviados">0</div>
+          <div class="stat-lbl">Enviados ✅</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val red" id="stat-fallidos">0</div>
+          <div class="stat-lbl">Fallidos ❌</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val gray" id="stat-total">0</div>
+          <div class="stat-lbl">Total 📋</div>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="log-box" id="log-box">
+        <div id="log-content"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// Generar ID único de sesión por usuario
+const SESSION_ID = 'ses_' + Math.random().toString(36).substr(2, 9);
+let archivoExcel = null;
+let pollInterval = null;
+let enviando = false;
+
+// ── Polling estado ────────────────────────────────────────────────────────────
+async function checkEstado() {
+  try {
+    const r = await fetch(`/api/estado/${SESSION_ID}`);
+    const data = await r.json();
+    actualizarUI(data);
+  } catch(e) {}
+}
+
+function actualizarUI({ estado, qr, enviados, fallidos, total, log }) {
+  const dot = document.getElementById('dot');
+  const statusText = document.getElementById('status-text');
+  const qrSection = document.getElementById('qr-section');
+  const formSection = document.getElementById('form-section');
+  const pasoConectar = document.getElementById('paso-conectar');
+
+  dot.className = 'dot ' + estado;
+  const labels = { desconectado:'Desconectado', conectando:'Iniciando...', qr:'Esperando que escanees el QR', listo:'Conectado ✅' };
+  statusText.textContent = labels[estado] || estado;
+
+  if (estado === 'listo') {
+    pasoConectar.style.display = 'none';
+    qrSection.classList.remove('show');
+    formSection.classList.add('show');
+  } else if (estado === 'qr' && qr) {
+    pasoConectar.style.display = 'none';
+    document.getElementById('qr-img').src = qr;
+    qrSection.classList.add('show');
+    formSection.classList.remove('show');
+  } else if (estado === 'conectando') {
+    pasoConectar.style.display = 'none';
+  } else {
+    pasoConectar.style.display = 'block';
+    qrSection.classList.remove('show');
+    formSection.classList.remove('show');
+  }
+
+  // Stats
+  if (enviando && total > 0) {
+    document.getElementById('stats').style.display = 'grid';
+    document.getElementById('stat-enviados').textContent = enviados;
+    document.getElementById('stat-fallidos').textContent = fallidos;
+    document.getElementById('stat-total').textContent = total;
+  }
+
+  // Log
+  if (log && log.length > 0) {
+    const logBox = document.getElementById('log-box');
+    logBox.classList.add('show');
+    const logContent = document.getElementById('log-content');
+    logContent.innerHTML = log.map(l => `<div class="log-line">${l}</div>`).join('');
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+}
+
+// ── Conectar ──────────────────────────────────────────────────────────────────
+async function conectar() {
+  const btn = document.getElementById('btn-conectar');
+  btn.innerHTML = '<div class="spinner"></div> Iniciando...';
+  btn.disabled = true;
+
+  await fetch('/api/conectar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: SESSION_ID })
+  });
+
+  pollInterval = setInterval(checkEstado, 2000);
+}
+
+// ── Desconectar ───────────────────────────────────────────────────────────────
+async function desconectar() {
+  await fetch('/api/desconectar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: SESSION_ID })
+  });
+  if (pollInterval) clearInterval(pollInterval);
+  actualizarUI({ estado: 'desconectado', qr: null, enviados: 0, fallidos: 0, total: 0, log: [] });
+  document.getElementById('btn-conectar').innerHTML = '📱 Conectar WhatsApp';
+  document.getElementById('btn-conectar').disabled = false;
+}
+
+// ── Dropzone ──────────────────────────────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  setArchivo(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => setArchivo(e.target.files[0]));
+
+function setArchivo(file) {
+  if (!file) return;
+  archivoExcel = file;
+  document.getElementById('drop-text').textContent = '✅ ' + file.name;
+  dropzone.style.borderColor = '#a855f7';
+  dropzone.style.color = '#6b21a8';
+  document.getElementById('btn-enviar').disabled = false;
+}
+
+// ── Enviar ────────────────────────────────────────────────────────────────────
+async function enviar() {
+  if (!archivoExcel) return;
+
+  const btn = document.getElementById('btn-enviar');
+  btn.innerHTML = '<div class="spinner"></div> Enviando...';
+  btn.disabled = true;
+  enviando = true;
+
+  const fd = new FormData();
+  fd.append('excel', archivoExcel);
+  fd.append('sessionId', SESSION_ID);
+  const msgCustom = document.getElementById('inp-mensaje').value.trim();
+  if (msgCustom) fd.append('mensaje_custom', msgCustom);
+
+  try {
+    const r = await fetch('/api/enviar', { method: 'POST', body: fd });
+    const data = await r.json();
+
+    if (data.ok) {
+      const res = document.getElementById('resultado');
+      res.className = 'ok';
+      res.textContent = `✅ ${data.mensaje} (${data.invalidos} números inválidos omitidos)`;
+      document.getElementById('stats').style.display = 'grid';
+      document.getElementById('stat-total').textContent = data.total;
+
+      // Seguir polling para ver progreso
+      if (!pollInterval) pollInterval = setInterval(checkEstado, 3000);
+    } else {
+      mostrarError(data.error);
+    }
+  } catch(e) {
+    mostrarError('Error de conexión');
+  }
+
+  btn.innerHTML = '🚀 Enviar mensajes';
+  btn.disabled = false;
+}
+
+function mostrarError(msg) {
+  const res = document.getElementById('resultado');
+  res.className = 'error';
+  res.textContent = '❌ ' + msg;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+checkEstado();
+setInterval(checkEstado, 5000);
+</script>
+</body>
+</html>
