@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: wazap-sender
+    runtime: node
+    buildCommand: npx puppeteer browsers install chrome && npm install
+    startCommand: node server.js
+    envVars:
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/.cache/puppeteer
